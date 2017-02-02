@@ -14,6 +14,5 @@ public class Music {
     String artist;
     Uri album_image;
     Bitmap bitmap_image;
-
-
+    Uri uri;
 }

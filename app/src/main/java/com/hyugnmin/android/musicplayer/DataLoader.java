@@ -62,6 +62,9 @@ public class DataLoader {
                 music.artist = cursor.getString(idx);
 
                 music.album_image = getAlbumImageSimple(music.albumId);
+                music.uri = getMusicUri(music.id);
+
+
                 //주석처리..시스템다운..
                 //music.bitmap_image = getAlbumImageBitmap(music.albumId);
 
@@ -69,6 +72,11 @@ public class DataLoader {
             }
         cursor.close(); //6. 처리 후 커서를 닫아준다.
         }
+    }
+
+    private static Uri getMusicUri(String music_id) {
+        Uri contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        return Uri.withAppendedPath(contentUri, music_id);
     }
         //가장 간단하게 앨범이미지를 가져오는 방법
         //문제점 - 실제 앨범데이터만 있어서 이미지를 불러오지 못하는 경우가 있다.
