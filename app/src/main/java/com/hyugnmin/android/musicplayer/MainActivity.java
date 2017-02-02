@@ -59,14 +59,12 @@ public class MainActivity extends AppCompatActivity {
     //데이터 로드 함수
     private void init() {
         Toast.makeText(this, "프로그램을 실행합니다.", Toast.LENGTH_SHORT).show();
-
-        DataLoader loader = new DataLoader(this);
-        loader.load();
-        ArrayList<Music> datas = loader.get();
-
+        //데이터를 불러온다
+        ArrayList<Music> datas = DataLoader.get(this);
+        //리사이클러뷰 세팅
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        MusicAdapter rca = new MusicAdapter(datas, this);
-        recyclerView.setAdapter(rca);
+        MusicAdapter adapter = new MusicAdapter(datas, this);
+        recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
 }
