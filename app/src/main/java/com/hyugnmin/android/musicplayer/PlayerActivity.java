@@ -44,8 +44,8 @@ public class PlayerActivity extends AppCompatActivity {
             switch (msg.what) {
                 case PROGRESS_SET:
                     if(player != null) {
-                        seekBar.setProgress(player.getCurrentPosition());
-                        textCurrent.setText(player.getCurrentPosition()/1000 + "");
+                            seekBar.setProgress(player.getCurrentPosition());
+                            textCurrent.setText(convertMiliToTime(player.getCurrentPosition()) + "");
                     }
                     break;
             }
@@ -58,10 +58,13 @@ public class PlayerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_player);
 
         playStatus = STOP;
-
-        setVolumeControlStream(AudioManager.STREAM_MUSIC); //볼륨조절버튼으로 미디어 음량 조절
+        //볼륨조절버튼으로 미디어 음량 조절
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         seekBar = (SeekBar)findViewById(R.id.seekBar);
+        //seekBar의 변경사항을 체크하는 리스너 등록
+        seekBar.setOnSeekBarChangeListener(seekBarChangeListener);
+
         textSec = (TextView) findViewById(R.id.textSec);
         textCurrent = (TextView) findViewById(R.id.textCurrent);
 
@@ -81,13 +84,24 @@ public class PlayerActivity extends AppCompatActivity {
         adapter = new PlayerAdapter(datas, this);
         //4. 뷰페이저 아답터 연결
         viewPager.setAdapter(adapter);
+        //4.1 뷰페이저 리스너 연결
+        viewPager.addOnPageChangeListener(viewPagerListener);
+
+
         //5. 특정 페이지 호출
         Intent intent = getIntent();
         if(intent != null) {
             Bundle bundle = intent.getExtras();
             position = bundle.getInt("position");
-            //페이지이동
-            viewPager.setCurrentItem(position);
+            //음악 기본 정보를 설정해준다.(음원 길이..)
+            // 첫 페이지일 경우만 init 호출
+            // - 첫 페이지가 아닐 경우 위의 setCurrentItem에 의해서 ViewPager의 onPageSelected가 호출된다.
+            if(position == 0) {
+                init();
+            } else {
+                viewPager.setCurrentItem(position);//페이지이동
+            }
+
         }
     }
 
@@ -109,17 +123,43 @@ public class PlayerActivity extends AppCompatActivity {
         }
     };
 
+    private void init() {
+        //뷰페이저로 이동할 경우 플레이어에 세팅된 값을 해제한 후 로직을 실행한다
+        if(player != null) {
+            //플레이어 상태를 STOP으로 변경
+            playStatus = STOP;
+            //아이콘을 플레이 버튼으로 변경
+            btnPlay.setImageResource(android.R.drawable.ic_media_play);
+            player.release();
+        }
+        Uri musicUri = datas.get(position).uri;
+        player = MediaPlayer.create(this, musicUri);
+        player.setLooping(false); //반복여부
+
+        //seekbar  길이
+        seekBar.setMax(player.getDuration());
+        //seekbar 현재값 0으로
+        seekBar.setProgress(0);
+        textSec.setText(convertMiliToTime(player.getDuration()) + "");
+        textCurrent.setText("0"); //현재 실행시간을 0으로 설정
+
+        //미디어 플레이어에 완료체크 리스너를 등록한다
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
+
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                next();
+            }
+        });
+
+        play();
+    }
+
     private void play() {
 
         switch (playStatus) {
             case STOP: //플레이어에 음원 세팅
-                Uri musicUri = datas.get(position).uri;
-                player = MediaPlayer.create(this, musicUri);
-                player.setLooping(false); //반복여부
 
-                //seekbar  길이
-                seekBar.setMax(player.getDuration());
-                textSec.setText(player.getDuration()/1000 + "Sec.");
                 player.start();
                 playStatus = PLAY;
                 btnPlay.setImageResource(android.R.drawable.ic_media_pause);
@@ -139,8 +179,8 @@ public class PlayerActivity extends AppCompatActivity {
                         }
                     }
                 }.start();
-
                 break;
+
             case PLAY : //플레이중이면 멈춤
                 player.pause();
                 playStatus = PAUSE;
@@ -155,12 +195,22 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
-    private void prev() {
+    private  String convertMiliToTime(long mili){
+        long min = mili/1000/60;
+        long sec = mili/1000%60;
+        return String.format("%02d", min) + ":" + String.format("%02d", sec);
+    }
 
+    private void prev() {
+        if(position > 0) {
+            viewPager.setCurrentItem(position -1);
+        }
     }
 
     private void next() {
-
+        if(position < datas.size()) {
+            viewPager.setCurrentItem(position +1);
+        }
     }
 
     @Override
@@ -172,4 +222,40 @@ public class PlayerActivity extends AppCompatActivity {
         playStatus  = STOP;
     }
 
+    //뷰페이지 체인지 리스너
+    ViewPager.OnPageChangeListener viewPagerListener = new ViewPager.OnPageChangeListener() {
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+        }
+
+        @Override
+        public void onPageSelected(int position) {
+            PlayerActivity.this.position = position;
+            init();
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int state) {
+
+        }
+    };
+
+    SeekBar.OnSeekBarChangeListener seekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
+
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            if(player != null && fromUser)
+            player.seekTo(progress);
+        }
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+
+        }
+    };
 }
