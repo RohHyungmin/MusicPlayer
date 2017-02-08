@@ -12,16 +12,30 @@ import android.provider.MediaStore;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by besto on 2017-02-01.
  */
 
 public class DataLoader {
+
+    //2. 데이터 컨텐츠 uri 정의
+    final static Uri URI = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+
+    //3. 데이터에서 가져올 데이터 컬럼명을 string 배열에 담는다.
+    //데이터 컬럼명은 Content uri 패키지에 들어있다.
+    final static String PROJ[] = {
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.ALBUM_ID,
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST
+    };
+
     //datas를 두 개의 activity에서 공유하기 위해 static으로 변경
-    private static ArrayList<Music> datas = new ArrayList<>();
+    private static List<Music> datas = new ArrayList<>();
     //static 변수인 datas를 체크해서 null 이면 load를 실행
-    public static ArrayList<Music> get(Context context)
+    public static List<Music> get(Context context)
     {
         if(datas == null || datas.size() == 0) {
             load(context);
@@ -32,38 +46,21 @@ public class DataLoader {
     private static void load(Context context) {
         //1. 데이터에 접근하기 위해 ContentResolver를 불러오고
         ContentResolver resolver = context.getContentResolver();
-
-        //2. 데이터 컨텐츠 uri 정의
-        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-
-        //3. 데이터에서 가져올 데이터 컬럼명을 string 배열에 담는다.
-        //데이터 컬럼명은 Content uri 패키지에 들어있다.
-        String proj[] = {
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.ALBUM_ID,
-                MediaStore.Audio.Media.TITLE,
-                MediaStore.Audio.Media.ARTIST
-        };
         //4. ContentResolver로 쿼리한 데이터를 커서에 담는다.
-        Cursor cursor = resolver.query(uri, proj, null, null, null);
-
+        Cursor cursor = resolver.query(URI, PROJ, null, null, null);
         //5. Cursor에 담긴 데이터를 반복문을 돌면서 꺼낸다
         if(cursor != null) {
             while(cursor.moveToNext()) {
                 Music music = new Music ();
 
-                int idx = cursor.getColumnIndex(proj[0]);
-                music.id = cursor.getString(idx);
-                idx = cursor.getColumnIndex(proj[1]);
-                music.albumId = cursor.getString(idx);
-                idx = cursor.getColumnIndex(proj[2]);
-                music.title = cursor.getString(idx);
-                idx = cursor.getColumnIndex(proj[3]);
-                music.artist = cursor.getString(idx);
+
+                music.id = getValue(cursor, PROJ[0]);
+                music.albumId = getValue(cursor, PROJ[1]);
+                music.title = getValue(cursor, PROJ[2]);
+                music.artist = getValue(cursor, PROJ[3]);
 
                 music.album_image = getAlbumImageSimple(music.albumId);
                 music.uri = getMusicUri(music.id);
-
 
                 //주석처리..시스템다운..
                 //music.bitmap_image = getAlbumImageBitmap(music.albumId);
@@ -72,6 +69,11 @@ public class DataLoader {
             }
         cursor.close(); //6. 처리 후 커서를 닫아준다.
         }
+    }
+
+    private  static String getValue(Cursor cursor, String columnName) {
+        int idx = cursor.getColumnIndex(columnName);
+        return cursor.getString(idx);
     }
 
     private static Uri getMusicUri(String music_id) {
@@ -102,4 +104,6 @@ public class DataLoader {
         }
         return  null;
     }
+
+
 }

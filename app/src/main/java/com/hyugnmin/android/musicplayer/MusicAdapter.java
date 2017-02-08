@@ -15,6 +15,7 @@ import com.bumptech.glide.Glide;
 import org.w3c.dom.Text;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by besto on 2017-02-01.
@@ -22,12 +23,12 @@ import java.util.ArrayList;
 
 public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.Holder> {
 
-    ArrayList<Music> datas;
+    List<Music> datas;
     Context context;
     Intent intent = null;
 
-    public MusicAdapter (ArrayList<Music> datas, Context context) {
-        this.datas = datas;
+    public MusicAdapter (Context context) {
+        this.datas = DataLoader.get(context);
         this.context = context;
         intent = new Intent(context, PlayerActivity.class);
     }
@@ -45,7 +46,6 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.Holder> {
         final Music music = datas.get(position);
         holder.textTitle.setText(music.title);
         holder.textArtist.setText(music.artist);
-
         holder.position = position;
         //holder.imageView2.setImageURI(music.album_image);
                                   //로드 대상 uri               //세팅할 이미지뷰
@@ -64,8 +64,6 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.Holder> {
         CardView cardView;
         int position;
 
-       // int position;
-
         public Holder(View itemView) {
             super(itemView);
 
@@ -73,15 +71,15 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.Holder> {
             textArtist = (TextView) itemView.findViewById(R.id.textArtist);
             imageView2 = (ImageView) itemView.findViewById(R.id.imageView2);
             cardView = (CardView) itemView.findViewById(R.id.cardView);
-
-            cardView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    intent.putExtra("position", position);
-                    context.startActivity(intent);
-                }
-            });
-
+            cardView.setOnClickListener(listener);
         }
+
+        private View.OnClickListener listener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                intent.putExtra("position", position);
+                context.startActivity(intent);
+            }
+        };
     }
 }
